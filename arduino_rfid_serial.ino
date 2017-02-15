@@ -31,6 +31,15 @@
 #define RST_PIN         9           // Configurable, see typical pin layout above
 #define SS_PIN          10          // Configurable, see typical pin layout above
 
+#define BUZZER_PIN          8
+#define STDBY_TOGGLE_PIN    7
+#define READY_TOGGLE_PIN    6
+#define SUCCESS             0
+#define STD_BY              2
+#define STDBY_REPETITION    2
+#define FAIL_REPETITION     4
+
+void ringBuzzer(uint8_t);
 MFRC522 mfrc522(SS_PIN, RST_PIN);   // Create MFRC522 instance.
 
 // Number of known default keys (hard-coded)
@@ -52,6 +61,9 @@ byte knownKeys[NR_KNOWN_KEYS][MFRC522::MF_KEY_SIZE] =  {
  * Initialize.
  */
 void setup() {
+
+    pinMode(BUZZER_PIN, OUTPUT);
+    ringBuzzer(STD_BY);
     Serial.begin(9600);         // Initialize serial communications with the PC
     while (!Serial);            // Do nothing if no serial port is opened (added for Arduinos based on ATMEGA32U4)
     SPI.begin();                // Init SPI bus
@@ -66,9 +78,11 @@ void dump_byte_array(byte *buffer, byte bufferSize) {
         //Serial.print(buffer[i] < 0x10 ? " 0" : " ");
         Serial.print(buffer[i], HEX);
     }
-    Serial.println();
+    Serial.print('\n');
     
     while (!(UCSR0A & _BV(TXC0)));
+    ringBuzzer(SUCCESS);
+    delay(3000);
 }
 
 /*
@@ -140,4 +154,32 @@ void loop() {
     dump_byte_array(mfrc522.uid.uidByte, mfrc522.uid.size);
     
     //resetFunc();
+}
+
+void ringBuzzer(uint8_t mode = STD_BY){
+   
+  if(mode == SUCCESS){
+    digitalWrite(BUZZER_PIN, HIGH);
+    delay(500);
+    digitalWrite(BUZZER_PIN, LOW);
+  }
+  else if(mode == STD_BY){
+
+    for(uint8_t iLoop = 0; iLoop < STDBY_REPETITION; iLoop++){
+
+      digitalWrite(BUZZER_PIN, HIGH);
+      delay(500);
+      digitalWrite(BUZZER_PIN, LOW);
+      delay(250);
+    }
+  }
+  else{
+    for(uint8_t iLoop = 0; iLoop < FAIL_REPETITION; iLoop++){
+
+      digitalWrite(BUZZER_PIN, HIGH);
+      delay(500);
+      digitalWrite(BUZZER_PIN, LOW);
+      delay(250);
+    }
+  }
 }
